@@ -1,0 +1,272 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Dice roller app
+Transform:
+- AWS::Serverless-2016-10-31
+
+Globals:
+  Api:
+    TracingEnabled: True
+  Function:
+    CodeUri: dist
+    MemorySize: 128
+    Runtime: nodejs16.x
+    Timeout: 10
+    Tracing: Active
+
+Resources:
+  DiceRollerLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    RoleName: dice-roller-lamdba-execution-role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaFullAccess
+        - arn:aws:iam::aws:policy/service-role/CloudWatchLogsFullAccess
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+
+  DiceRollerWebSocketApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: DiceRollerWebSocketApi
+      Description: Dice roller Websocket API
+      ProtocolType: WEBSOCKET
+      RouteSelectionExpression: "$request.body.action"
+
+  DiceRollerDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+      - ConnectRoute
+      - DisconnectRoute
+      - RollRoute
+    Properties:
+      ApiId: !Ref DiceRollerWebSocketApi
+
+  DiceRollerStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: v1
+      Description: Version 1 'stage'
+      DeploymentId: !Ref DiceRollerDeployment
+      ApiId: !Ref DiceRollerWebSocketApi
+
+  DiceRollerAuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: authorize.handler
+      Role: !Ref DiceRollerLambdaExecutionRole
+
+  DiceRollerAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      Name: DiceRollerAuthorizer
+      ApiId: !Ref DiceRollerWebSocketApi
+      AuthorizerType: REQUEST
+      AuthorizerUri:
+        Fn::Sub:
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DiceRollerAuthorizerFunction.Arn}/invocations
+      IdentitySource:
+        - "route.request.header.x-app-id"
+      EnableSimpleResponses: True
+
+  DiceRollerAuthorizerFunctionPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - DiceRollerWebSocketApi
+      - DiceRollerAuthorizerFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref DiceRollerAuthorizerFunction
+      Principal: apigateway.amazonaws.com
+
+  RollIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref DiceRollerWebSocketApi
+      Description: Client disconnection integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnRollFunction.Arn}/invocations
+
+  RollRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref DiceRollerWebSocketApi
+      RouteKey: ROLL
+      AuthorizationType: NONE
+      OperationName: RollRoute
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref RollIntegration
+
+  JoinIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref DiceRollerWebSocketApi
+      Description: Join room integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnJoinFunction.Arn}/invocations
+
+  JoinRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref DiceRollerWebSocketApi
+      RouteKey: JOIN_ROOM
+      AuthorizationType: NONE
+      OperationName: JoinRoute
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref JoinIntegration
+
+  CreateIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref DiceRollerWebSocketApi
+      Description: Create room integration
+      IntegrationType: AWS_PROXY
+      IntegrationUri: 
+        Fn::Sub:
+            arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OnCreateFunction.Arn}/invocations
+
+  CreateRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref DiceRollerWebSocketApi
+      RouteKey: CREATE_ROOM
+      AuthorizationType: NONE
+      OperationName: CreateRoute
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref CreateIntegration
+
+  OnRollFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.roll
+      Description: Roll handler
+      Role: !Ref DiceRollerLambdaExecutionRole
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+            - 'execute-api:ManageConnections'
+            Resource:
+            - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${DiceRollerWebSocketApi}/*'
+      Environment:
+        Variables:
+          ROLLS_TABLE: !Ref RollsTable
+
+  OnRollLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambdas/${OnRollFunction}
+      RetentionInDays: 7
+
+  OnRollPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - DiceRollerWebSocketApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OnRollFunction
+      Principal: apigateway.amazonaws.com
+
+  OnJoinRoomFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.joinRoom
+      Description: Join room handler
+      Role: !Ref DiceRollerLambdaExecutionRole
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MatchesTable
+        - Statement:
+          - Effect: Allow
+            Action:
+            - 'execute-api:ManageConnections'
+            Resource:
+            - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${DiceRollerWebSocketApi}/*'
+      Environment:
+        Variables:
+          MATCHES_TABLE: !Ref MatchesTable
+
+  OnJoinRoomLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambdas/${OnJoinRoomFunction}
+      RetentionInDays: 7
+
+  OnJoinRoomPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - DiceRollerWebSocketApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OnJoinRoomFunction
+      Principal: apigateway.amazonaws.com
+
+  OnCreateRoomFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.createRoom
+      Description: Create room handler
+      Role: !Ref DiceRollerLambdaExecutionRole
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MatchesTable
+        - Statement:
+          - Effect: Allow
+            Action:
+            - 'execute-api:ManageConnections'
+            Resource:
+            - !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${DiceRollerWebSocketApi}/*'
+      Environment:
+        Variables:
+          MATCHES_TABLE: !Ref MatchesTable
+
+  OnCreateRoomLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambdas/${OnCreateRoomFunction}
+      RetentionInDays: 7
+
+  OnCreateRoomPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - DiceRollerWebSocketApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref OnCreateRoomFunction
+      Principal: apigateway.amazonaws.com
+
+  MatchesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: ttl
+          AttributeType: N
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      TableName: matches
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+Outputs:
+  WebSocketsURI:
+    Description: URI to connect websocket clients
+    Value: !Sub wss://${DiceRollerWebSocketApi}.execute-api.${AWS::Region}.amazonaws.com/${DiceRollerStage}/
