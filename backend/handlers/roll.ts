@@ -8,6 +8,7 @@ import {
   buildRoomFromBody,
   buildUserFromBody,
 } from "../utils";
+import {OperationAction} from '../types';
 
 export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
   const {
@@ -23,7 +24,7 @@ export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
       event,
       connectionIds: [connectionId],
       data: {
-        action: "ROLL",
+        action: OperationAction.ROLL,
         success: false,
         error: "invalid user, room or rolls",
       },
@@ -37,7 +38,7 @@ export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
       event,
       connectionIds: [connectionId],
       data: {
-        action: "ROLL",
+        action: OperationAction.ROLL,
         success: false,
         error: "no room",
       },
@@ -51,7 +52,7 @@ export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     connectionIds: dbRoom!.users.map(({ connectionId }) => connectionId),
     data: {
-      action: "ROLL",
+      action: OperationAction.ROLL,
       success: true,
       result: { roller: { id: connectionId, ...user }, ...rollResults },
     },
