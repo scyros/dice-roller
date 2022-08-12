@@ -1,4 +1,5 @@
 import Ajv from "ajv";
+import {RoomRaw, User} from '../types';
 
 const ajv = new Ajv();
 
@@ -10,7 +11,7 @@ const userSchema = {
   required: ["nickName"],
   additionalProperties: false,
 };
-export const isValidUser = ajv.compile(userSchema);
+export const isValidUser: (data: unknown) => data is User = ajv.compile(userSchema);
 
 const roomSchema = {
   type: "object",
@@ -20,4 +21,4 @@ const roomSchema = {
   required: ["id"],
   additionalProperties: false,
 };
-export const isValidRoom = ajv.compile(roomSchema);
+export const isValidRoom: (data: unknown) => data is RoomRaw = ajv.compile(roomSchema);

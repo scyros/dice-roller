@@ -5,7 +5,7 @@ import {
 import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
 
 import { leaveRoom as leaveRoomDB } from "../db";
-import { OperationResult } from "../types";
+import {OperationAction, OperationResult} from '../types';
 
 async function sendMsg(
   client: ApiGatewayManagementApiClient,
@@ -91,7 +91,7 @@ async function leaveRoom({
     event,
     connectionIds,
     data: {
-      action: "LEAVE_ROOM",
+      action: OperationAction.LEAVE_ROOM,
       success: true,
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       result: room!,

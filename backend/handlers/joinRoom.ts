@@ -2,7 +2,7 @@ import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
 
 import { joinRoom } from "../db";
 import { kickOutUnreachableConnIds, sendMessage } from "../messaging";
-import { User } from "../types";
+import {OperationAction, User} from '../types';
 import { buildRoomFromBody, buildUserFromBody } from "../utils";
 
 export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
@@ -18,7 +18,7 @@ export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
       event,
       connectionIds: [connectionId],
       data: {
-        action: "JOIN_ROOM",
+        action: OperationAction.JOIN_ROOM,
         success: false,
         error: "invalid user or room",
       },
@@ -40,7 +40,7 @@ export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
       event,
       connectionIds: [connectionId],
       data: {
-        action: "JOIN_ROOM",
+        action: OperationAction.JOIN_ROOM,
         success: false,
         error: "impossible to join",
       },
@@ -58,7 +58,7 @@ export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
     event,
     connectionIds: users.map(({ connectionId }) => connectionId),
     data: {
-      action: "JOIN_ROOM",
+      action: OperationAction.JOIN_ROOM,
       success: true,
       result: {
         roomId,

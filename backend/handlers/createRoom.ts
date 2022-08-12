@@ -3,6 +3,7 @@ import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
 import { createRoom } from "../db";
 import { sendMessage } from "../messaging";
 import { buildUserFromBody } from "../utils";
+import {OperationAction} from '../types';
 
 export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
   const {
@@ -16,7 +17,7 @@ export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
       event,
       connectionIds: [connectionId],
       data: {
-        action: "CREATE_ROOM",
+        action: OperationAction.CREATE_ROOM,
         success: false,
         error: "invalid user",
       },
@@ -34,7 +35,7 @@ export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
       event,
       connectionIds: [connectionId],
       data: {
-        action: "CREATE_ROOM",
+        action: OperationAction.CREATE_ROOM,
         success,
         error: "impossible to create room",
       },
@@ -46,7 +47,7 @@ export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
     event,
     connectionIds: [connectionId],
     data: {
-      action: "CREATE_ROOM",
+      action: OperationAction.CREATE_ROOM,
       success,
       result,
     },

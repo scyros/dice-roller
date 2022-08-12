@@ -5,7 +5,7 @@ import { Roll, Room, User } from "../types";
 export function buildUserFromBody(body = ""): User | null {
   try {
     const { user } = JSON.parse(body) as { user: unknown };
-    if (isValidUser(user)) return user as unknown as User;
+    if (isValidUser(user)) return user;
     return null;
   } catch (e) {
     return null;
@@ -15,7 +15,7 @@ export function buildUserFromBody(body = ""): User | null {
 export function buildRoomFromBody(body = ""): Room | null {
   try {
     const { room } = JSON.parse(body) as { room: unknown };
-    if (isValidRoom(room)) return { users: [], ...room } as unknown as Room;
+    if (isValidRoom(room)) return { users: [], ...room };
     return null;
   } catch (e) {
     return null;
