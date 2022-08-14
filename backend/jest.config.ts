@@ -3,15 +3,13 @@
  * https://jestjs.io/docs/configuration
  */
 
-export default {
-  transform: {
-    "^.+\\.ts?$": ["esbuild-jest", { sourcemap: true }],
-  },
-  clearMocks: true,
+import { Config } from '@jest/types';
+
+const config: Config.InitialOptions = {
+  testEnvironment: 'node',
   collectCoverage: true,
   collectCoverageFrom: ["**/*.ts", "!jest.config.ts"],
   coverageDirectory: "coverage",
-  coverageProvider: "v8",
   coverageThreshold: {
     global: {
       branches: 100,
@@ -26,5 +24,6 @@ export default {
       statements: 50,
     },
   },
-  testMatch: ["**/tests/*.test.ts"],
 };
+
+export default config;
