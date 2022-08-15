@@ -1,11 +1,8 @@
-import {
-  ApiGatewayManagementApiClient,
-  PostToConnectionCommand,
-} from "@aws-sdk/client-apigatewaymanagementapi";
-import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
+import { ApiGatewayManagementApiClient, PostToConnectionCommand } from "@aws-sdk/client-apigatewaymanagementapi";
 
 import { leaveRoom as leaveRoomDB } from "../db";
-import {OperationAction, OperationResult} from '../types';
+import { Actions, AWSEvent, OperationResult, UnreachableUsers } from "../types";
+import { isSuccess } from "../utils";
 
 async function sendMsg(
   client: ApiGatewayManagementApiClient,
@@ -30,12 +27,8 @@ async function sendMsgs(
   connectionIds: string[],
   data: Uint8Array
 ): Promise<string[]> {
-  const results = await Promise.all(
-    connectionIds.map((connectionId) => sendMsg(client, connectionId, data))
-  );
-  const badIdxs = results
-    .map((ok, idx) => (ok ? -1 : idx))
-    .filter((idx) => idx >= 0);
+  const results = await Promise.all(connectionIds.map((connectionId) => sendMsg(client, connectionId, data)));
+  const badIdxs = results.map((ok, idx) => (ok ? -1 : idx)).filter((idx) => idx >= 0);
   const bads = badIdxs.map((idx) => connectionIds[idx]);
 
   return bads;
@@ -51,7 +44,7 @@ export async function sendMessage<MessageType = string>({
   connectionIds,
   data,
 }: {
-  event: APIGatewayProxyWebsocketEventV2;
+  event: AWSEvent;
   connectionIds: string[];
   data: OperationResult<MessageType>;
 }): Promise<string[]> {
@@ -73,38 +66,34 @@ async function leaveRoom({
   roomId,
   connectionIds,
 }: {
-  event: APIGatewayProxyWebsocketEventV2;
+  event: AWSEvent;
   roomId: string;
   connectionIds: string[];
 }): Promise<string[]> {
-  const {
-    error,
-    result: room,
-    success,
-  } = await leaveRoomDB(roomId, connectionIds);
-  if (!success) {
-    console.error(error);
+  const result = await leaveRoomDB(roomId, connectionIds);
+  if (!isSuccess(result)) {
+    result.errors?.map(console.error);
     return [];
   }
 
+  const { result: room } = result;
   return sendMessage({
     event,
     connectionIds,
     data: {
-      action: OperationAction.LEAVE_ROOM,
+      action: Actions.LeaveRoom,
       success: true,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      result: room!,
+      result: room,
     },
   });
 }
 
-export async function kickOutUnreachableConnIds({
+async function kickOutUnreachableConnIds({
   event,
   roomId,
   connectionIds,
 }: {
-  event: APIGatewayProxyWebsocketEventV2;
+  event: AWSEvent;
   roomId: string;
   connectionIds: string[];
 }): Promise<void> {
@@ -112,4 +101,28 @@ export async function kickOutUnreachableConnIds({
   while (connIds.length > 0) {
     connIds = await leaveRoom({ event, roomId, connectionIds: connIds });
   }
+}
+
+export async function sendMessageAndKickoutUnreachables<T>({
+  event,
+  roomId,
+  connectionIds,
+  message,
+  success,
+  action,
+}: UnreachableUsers & {
+  message: T;
+  success: boolean;
+  action: Actions;
+}): Promise<void> {
+  const connIdsToRemove = await sendMessage<T>({
+    event,
+    connectionIds,
+    data: {
+      action,
+      success,
+      result: message,
+    },
+  });
+  await kickOutUnreachableConnIds({ event, roomId, connectionIds: connIdsToRemove });
 }

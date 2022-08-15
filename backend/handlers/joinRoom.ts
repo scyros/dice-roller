@@ -1,77 +1,56 @@
-import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
-
 import { joinRoom } from "../db";
-import { kickOutUnreachableConnIds, sendMessage } from "../messaging";
-import {OperationAction, User} from '../types';
-import { buildRoomFromBody, buildUserFromBody } from "../utils";
+import { isValidRoom, isValidUser } from "../db/schemas";
+import { Errors } from "../errors";
+import { sendMessage, sendMessageAndKickoutUnreachables } from "../messaging";
+import { Actions, AWSEvent, Room, User } from "../types";
+import { extractFromBody, isSuccess } from "../utils";
 
-export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
+export const handler = async (event: AWSEvent) => {
   const {
     body,
     requestContext: { connectionId },
   } = event;
 
-  const user = buildUserFromBody(body);
-  const room = buildRoomFromBody(body);
-  if (!user || !room) {
+  const user = extractFromBody<User>(body, "user");
+  const room = extractFromBody<Room>(body, "room");
+  if (!isValidUser(user) || !isValidRoom(room)) {
     await sendMessage({
       event,
       connectionIds: [connectionId],
       data: {
-        action: OperationAction.JOIN_ROOM,
+        action: Actions.JoinRoom,
         success: false,
-        error: "invalid user or room",
+        errors: [Errors.InvalidUser, Errors.InvalidRoom],
+      },
+    });
+    return;
+  }
+
+  const result = await joinRoom(room.id, { connectionId, ...user });
+  if (!isSuccess(result)) {
+    result.errors?.map(console.error);
+    await sendMessage({
+      event,
+      connectionIds: [connectionId],
+      data: {
+        action: Actions.JoinRoom,
+        success: false,
+        errors: [Errors.JoinRoomError],
       },
     });
     return;
   }
 
   const {
-    error: joinError,
-    result: joinResult,
-    success: joinSuccess,
-  } = await joinRoom(room.id, {
-    connectionId,
-    ...user,
-  });
-  if (!joinSuccess) {
-    console.error(joinError);
-    await sendMessage({
-      event,
-      connectionIds: [connectionId],
-      data: {
-        action: OperationAction.JOIN_ROOM,
-        success: false,
-        error: "impossible to join",
-      },
-    });
-    return;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const { id: roomId, users } = joinResult!;
-  const connsToRemove = await sendMessage<{
-    roomId: string;
-    joiner: User & { connectionId: string };
-    users: (User & { connectionId: string })[];
-  }>({
-    event,
-    connectionIds: users.map(({ connectionId }) => connectionId),
-    data: {
-      action: OperationAction.JOIN_ROOM,
-      success: true,
-      result: {
-        roomId,
-        joiner: { connectionId, ...user },
-        users,
-      },
-    },
-  });
-
-  await kickOutUnreachableConnIds({
+    result: { id: roomId, users },
+  } = result;
+  await sendMessageAndKickoutUnreachables({
     event,
     roomId,
-    connectionIds: connsToRemove,
+    connectionIds: (users ?? []).map(({ connectionId }) => connectionId),
+    message: { roomId, joiner: { connectionId, ...user }, users: users ?? [] },
+    action: Actions.JoinRoom,
+    success: true,
   });
 };
 

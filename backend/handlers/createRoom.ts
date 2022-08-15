@@ -1,55 +1,53 @@
-import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
-
 import { createRoom } from "../db";
+import { isValidUser } from "../db/schemas";
+import { Errors } from "../errors";
 import { sendMessage } from "../messaging";
-import { buildUserFromBody } from "../utils";
-import {OperationAction} from '../types';
+import { Actions, AWSEvent, User } from "../types";
+import { extractFromBody, isSuccess } from "../utils";
 
-export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
+const handler = async (event: AWSEvent) => {
   const {
     body,
     requestContext: { connectionId },
   } = event;
 
-  const user = buildUserFromBody(body);
-  if (!user) {
+  const user = extractFromBody<User>(body, "user");
+  if (!isValidUser(user)) {
     await sendMessage({
       event,
       connectionIds: [connectionId],
       data: {
-        action: OperationAction.CREATE_ROOM,
+        action: Actions.CreateRoom,
         success: false,
-        error: "invalid user",
+        errors: [Errors.InvalidUser],
       },
     });
     return;
   }
 
-  const { error, result, success } = await createRoom({
-    connectionId,
-    ...user,
-  });
-  if (!success) {
-    console.error(error);
+  const result = await createRoom({ connectionId, ...user });
+  if (!isSuccess(result)) {
+    result.errors?.map(console.error);
     await sendMessage({
       event,
       connectionIds: [connectionId],
       data: {
-        action: OperationAction.CREATE_ROOM,
-        success,
-        error: "impossible to create room",
+        action: Actions.CreateRoom,
+        success: false,
+        errors: [Errors.CreateRoomError],
       },
     });
     return;
   }
 
+  const { result: room } = result;
   await sendMessage({
     event,
     connectionIds: [connectionId],
     data: {
-      action: OperationAction.CREATE_ROOM,
-      success,
-      result,
+      action: Actions.CreateRoom,
+      success: true,
+      result: room,
     },
   });
 };

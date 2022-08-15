@@ -1,68 +1,57 @@
-import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
-
 import { getRoom } from "../db";
 import { doRoll } from "../dice";
-import { kickOutUnreachableConnIds, sendMessage } from "../messaging";
-import {
-  buildRollsFromBody,
-  buildRoomFromBody,
-  buildUserFromBody,
-} from "../utils";
-import {OperationAction} from '../types';
+import { sendMessage, sendMessageAndKickoutUnreachables } from "../messaging";
+import { extractFromBody, isSuccess } from "../utils";
+import { Actions, AWSEvent, Roll, Room, User } from "../types";
+import { Errors } from "../errors";
 
-export const handler = async (event: APIGatewayProxyWebsocketEventV2) => {
+export const handler = async (event: AWSEvent) => {
   const {
     body,
     requestContext: { connectionId },
   } = event;
 
-  const user = buildUserFromBody(body);
-  const room = buildRoomFromBody(body);
-  const rolls = buildRollsFromBody(body);
+  const user = extractFromBody<User>(body, "user");
+  const room = extractFromBody<Room>(body, "room");
+  const rolls = extractFromBody<Roll[]>(body, "rolls");
   if (!user || !room || !rolls) {
     await sendMessage({
       event,
       connectionIds: [connectionId],
       data: {
-        action: OperationAction.ROLL,
+        action: Actions.Roll,
         success: false,
-        error: "invalid user, room or rolls",
+        errors: [Errors.InvalidUser, Errors.InvalidRoom, Errors.InvalidRoll],
       },
     });
     return;
   }
 
-  const { success, result: dbRoom } = await getRoom(room.id);
-  if (!success) {
+  const result = await getRoom(room.id);
+  if (!isSuccess(result)) {
     await sendMessage({
       event,
       connectionIds: [connectionId],
       data: {
-        action: OperationAction.ROLL,
+        action: Actions.Roll,
         success: false,
-        error: "no room",
+        errors: [Errors.NoRoom],
       },
     });
     return;
   }
 
+  const {
+    result: { id: roomId, users },
+  } = result;
   const rollResults = rolls.map(doRoll);
-  const connsToRemove = await sendMessage({
+  await sendMessageAndKickoutUnreachables({
     event,
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    connectionIds: dbRoom!.users.map(({ connectionId }) => connectionId),
-    data: {
-      action: OperationAction.ROLL,
-      success: true,
-      result: { roller: { id: connectionId, ...user }, ...rollResults },
-    },
-  });
-
-  await kickOutUnreachableConnIds({
-    event,
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    roomId: dbRoom!.id,
-    connectionIds: connsToRemove,
+    roomId: roomId,
+    connectionIds: (users ?? []).map(({ connectionId }) => connectionId),
+    message: { roller: { connectionId, ...user }, ...rollResults },
+    action: Actions.Roll,
+    success: true,
   });
 };
 

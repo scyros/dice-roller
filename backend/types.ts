@@ -1,27 +1,41 @@
-export interface OperationResult<T> {
-  action?: OperationAction;
-  success: boolean;
-  result?: T;
-  error?: string;
+import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
+
+export interface AWSEvent extends Omit<APIGatewayProxyWebsocketEventV2, "body"> {
+  body: unknown;
 }
 
-export enum OperationAction {
-  CREATE_ROOM = 'CREATE_ROOM',
-  JOIN_ROOM = 'JOIN_ROOM',
-  ROLL = 'ROLL',
-  LEAVE_ROOM = 'LEAVE_ROOM'
+export interface OperationResult<T> {
+  action?: Actions;
+  errors?: string[];
+  result?: T;
+  success: boolean;
+}
+
+export interface OperationSuccess<T> extends Omit<OperationResult<T>, "errors | result | success"> {
+  result: T;
+  siccess: true;
+}
+
+export interface UnreachableUsers {
+  event: AWSEvent;
+  roomId: string;
+  connectionIds: string[];
+}
+
+export enum Actions {
+  CreateRoom = "CREATE_ROOM",
+  JoinRoom = "JOIN_ROOM",
+  Roll = "ROLL",
+  LeaveRoom = "LEAVE_ROOM",
 }
 
 export interface User {
   nickName: string;
 }
 
-export interface RoomRaw {
+export interface Room {
   id: string;
-}
-
-export interface Room extends RoomRaw {
-  users: (User & { connectionId: string })[];
+  users?: (User & { connectionId: string })[];
 }
 
 export interface Roll {

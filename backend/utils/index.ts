@@ -1,42 +1,48 @@
-import { isValidRoom, isValidUser } from "../db/schemas";
-import { buildRoll, isValidRoll } from "../dice";
-import { Roll, Room, User } from "../types";
+import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
+import { AWSEvent, OperationResult, OperationSuccess } from "../types";
 
-export function buildUserFromBody(body = ""): User | null {
+/**
+ * Converts string body to json body
+ * @param body Message body string
+ * @returns Message body json
+ */
+export function parseBody(event: APIGatewayProxyWebsocketEventV2): unknown | null {
   try {
-    const { user } = JSON.parse(body) as { user: unknown };
-    if (isValidUser(user)) return user;
-    return null;
+    const { body: rawBody = "" } = event;
+    const body = JSON.parse(rawBody) as unknown;
+    (event as AWSEvent).body = body;
+    return body;
   } catch (e) {
     return null;
   }
 }
 
-export function buildRoomFromBody(body = ""): Room | null {
-  try {
-    const { room } = JSON.parse(body) as { room: unknown };
-    if (isValidRoom(room)) return { users: [], ...room };
-    return null;
-  } catch (e) {
-    return null;
-  }
+/**
+ * Retrieve a key from body json or null if it isn't there
+ * @param body Message body json
+ * @param key Object key to be extracted
+ * @returns If key exists in body, the value found or null
+ */
+export function extractFromBody<T>(body: unknown | null, key: string): T | null {
+  if (!body) return null;
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+  return ((body as any)[key] as T) || null;
 }
 
-export function buildRollsFromBody(body = ""): Roll[] | null {
-  try {
-    const { rolls } = JSON.parse(body) as { rolls: unknown };
-    if (!Array.isArray(rolls)) return null;
-    if (!rolls.every(isValidRoll)) return null;
-
-    return rolls.map(buildRoll);
-  } catch (e) {
-    return null;
-  }
-}
-
+/**
+ * Remove an item from a given collection
+ * @param collection Collection you want to remve item from
+ * @param item Item you want to remove
+ * @returns A copy of the collection without the item
+ */
 export function removeItemFromCollection<T>(collection: T[], item: T): T[] {
   const idx = collection.findIndex((i) => i === item);
   const copy = collection.slice();
   if (idx !== -1) copy.splice(idx, 1);
   return copy;
+}
+
+export function isSuccess<T>(result: OperationResult<T>): result is OperationSuccess<T> {
+  return result.success;
 }
