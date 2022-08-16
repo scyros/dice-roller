@@ -8,7 +8,7 @@
     "lint": "eslint . --ext .ts --fix",
     "lint:strict": "npm run lint && tsc",
     "test": "jest",
-    "posttest": "npm run lint"
+    "posttest": "npm run lint:strict"
   },
   "devDependencies": {
     "@aws-sdk/client-apigatewaymanagementapi": "^3.142.0",

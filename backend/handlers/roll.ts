@@ -1,19 +1,20 @@
 import { getRoom } from "../db";
-import { doRoll } from "../dice";
+import { doRoll } from '../dice';
 import { sendMessage, sendMessageAndKickoutUnreachables } from "../messaging";
 import { extractFromBody, isSuccess } from "../utils";
-import { Action, AWSEvent, Roll, Room, User } from "../types";
+import { Action, AWSEvent, Handler, Roll, Room, User } from '../types';
 import { Error } from "../errors";
+import { isValidArrayOf, isValidRoll, isValidRoom, isValidUser } from '../db/schemas';
 
-export const handler = async (event: AWSEvent) => {
+const handler: Handler<void> = async (event: AWSEvent) => {
   const {
     body,
     requestContext: { connectionId },
   } = event;
 
-  const user = extractFromBody<User>(body, "user");
-  const room = extractFromBody<Room>(body, "room");
-  const rolls = extractFromBody<Roll[]>(body, "rolls");
+  const user = extractFromBody<User>(body, "user", isValidUser);
+  const room = extractFromBody<Room>(body, "room", isValidRoom);
+  const rolls = extractFromBody<Roll[]>(body, "rolls", isValidArrayOf(isValidRoll));
   if (!user || !room || !rolls) {
     await sendMessage({
       event,

@@ -1,4 +1,5 @@
 export enum Error {
+  InvalidBody = "INVALID_BODY",
   InvalidUser = "INVALID_USER",
   InvalidRoom = "INVALID_ROOM",
   InvalidRoll = "INVALID_ROLL",
