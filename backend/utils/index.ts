@@ -1,9 +1,9 @@
 import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
-import { AWSEvent, OperationResult, OperationSuccess } from "../types";
+import {AWSEvent, OperationError, OperationResult, OperationSuccess} from '../types';
 
 /**
  * Converts string body to json body
- * @param body Message body string
+ * @param event Message body string
  * @returns Message body json
  */
 export function parseBody(event: APIGatewayProxyWebsocketEventV2): unknown | null {
@@ -32,7 +32,7 @@ export function extractFromBody<T>(body: unknown | null, key: string): T | null 
 
 /**
  * Remove an item from a given collection
- * @param collection Collection you want to remve item from
+ * @param collection Collection you want to remove item from
  * @param item Item you want to remove
  * @returns A copy of the collection without the item
  */
@@ -45,4 +45,8 @@ export function removeItemFromCollection<T>(collection: T[], item: T): T[] {
 
 export function isSuccess<T>(result: OperationResult<T>): result is OperationSuccess<T> {
   return result.success;
+}
+
+export function isError(result: OperationResult<unknown>): result is OperationError {
+  return !result.success;
 }

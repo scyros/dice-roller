@@ -3,7 +3,7 @@ import { doRoll } from "../dice";
 import { sendMessage, sendMessageAndKickoutUnreachables } from "../messaging";
 import { extractFromBody, isSuccess } from "../utils";
 import { Action, AWSEvent, Roll, Room, User } from "../types";
-import { Errors } from "../errors";
+import { Error } from "../errors";
 
 export const handler = async (event: AWSEvent) => {
   const {
@@ -21,7 +21,7 @@ export const handler = async (event: AWSEvent) => {
       data: {
         action: Action.Roll,
         success: false,
-        errors: [Errors.InvalidUser, Errors.InvalidRoom, Errors.InvalidRoll],
+        errors: [Error.InvalidUser, Error.InvalidRoom, Error.InvalidRoll],
       },
     });
     return;
@@ -35,7 +35,7 @@ export const handler = async (event: AWSEvent) => {
       data: {
         action: Action.Roll,
         success: false,
-        errors: [Errors.NoRoom],
+        errors: [Error.NoRoom],
       },
     });
     return;

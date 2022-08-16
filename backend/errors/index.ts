@@ -1,4 +1,4 @@
-export enum Errors {
+export enum Error {
   InvalidUser = "INVALID_USER",
   InvalidRoom = "INVALID_ROOM",
   InvalidRoll = "INVALID_ROLL",

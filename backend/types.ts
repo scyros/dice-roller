@@ -1,19 +1,22 @@
 import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
+import {Error} from './errors';
 
 export interface AWSEvent extends Omit<APIGatewayProxyWebsocketEventV2, "body"> {
   body: unknown;
 }
 
-export interface OperationResult<T> {
+export type OperationResult<T> = OperationSuccess<T> | OperationError;
+
+export interface OperationSuccess<T> {
   action?: Action;
-  errors?: string[];
-  result?: T;
-  success: boolean;
+  result: T;
+  success: true;
 }
 
-export interface OperationSuccess<T> extends Omit<OperationResult<T>, "errors | result | success"> {
-  result: T;
-  siccess: true;
+export interface OperationError {
+  action?: Action;
+  errors: (Error | string)[];
+  success: false;
 }
 
 export interface UnreachableUsers {

@@ -1,10 +1,10 @@
 import { ConditionalCheckFailedException, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
-import { Errors } from "../errors";
+import { Error } from "../errors";
 
 import { OperationResult, Room, User } from "../types";
-import { isSuccess } from "../utils";
+import { isSuccess } from '../utils';
 
 const ddb = new DynamoDBClient({ region: process.env.AWS_REGION });
 const dbbDoc = DynamoDBDocumentClient.from(ddb);
@@ -33,7 +33,7 @@ export async function createRoom(user: User & { connectionId: string }): Promise
   } catch (e) {
     let errors = [`${e}`];
     if (e instanceof ConditionalCheckFailedException) {
-      errors = [Errors.RoomAlreadyCreated];
+      errors = [Error.RoomAlreadyCreated];
     }
     return { success: false, errors };
   }
@@ -60,7 +60,7 @@ export async function joinRoom(roomId: string, user: User & { connectionId: stri
 
     return { success: true, result: room as Room };
   } catch (e) {
-    return { success: false, errors: [Errors.JoinRoomError] };
+    return { success: false, errors: [Error.JoinRoomError] };
   }
 }
 
@@ -80,7 +80,7 @@ export async function getRoom(roomId: string): Promise<OperationResult<Room>> {
 
     return { success: true, result: room as Room };
   } catch (e) {
-    return { success: false, errors: [Errors.NoRoom] };
+    return { success: false, errors: [Error.NoRoom] };
   }
 }
 
@@ -129,6 +129,6 @@ export async function leaveRoom(roomId: string, connectionIds: string[]): Promis
     );
     return { success: true, result: room as Room };
   } catch (e) {
-    return { success: false, errors: [Errors.LeaveRoomError] };
+    return { success: false, errors: [Error.LeaveRoomError] };
   }
 }

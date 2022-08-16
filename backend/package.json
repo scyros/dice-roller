@@ -6,6 +6,7 @@
     "prebuild": "rimraf ./dist",
     "build": "esbuild index.ts --bundle --minify --sourcemap --platform=node --target=es2020 --outfile=dist/index.js",
     "lint": "eslint . --ext .ts --fix",
+    "lint:strict": "npm run lint && tsc",
     "test": "jest",
     "posttest": "npm run lint"
   },

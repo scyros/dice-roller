@@ -5,8 +5,8 @@ const DICE_ROLL_REGEX =
 
 export function isValidRoll(roll: unknown) {
   if (typeof roll !== "string") return false;
-  if (!DICE_ROLL_REGEX.test(roll)) return false;
-  return true;
+
+  return DICE_ROLL_REGEX.test(roll);
 }
 
 export function buildRoll(roll: string): Roll {

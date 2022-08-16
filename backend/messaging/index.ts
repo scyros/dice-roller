@@ -72,7 +72,7 @@ async function leaveRoom({
 }): Promise<string[]> {
   const result = await leaveRoomDB(roomId, connectionIds);
   if (!isSuccess(result)) {
-    result.errors?.map(console.error);
+    result.errors.map(console.error);
     return [];
   }
 
@@ -112,7 +112,7 @@ export async function sendMessageAndKickoutUnreachables<T>({
   action,
 }: UnreachableUsers & {
   message: T;
-  success: boolean;
+  success: true;
   action: Action;
 }): Promise<void> {
   const connIdsToRemove = await sendMessage<T>({
