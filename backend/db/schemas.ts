@@ -1,5 +1,5 @@
 import Ajv from "ajv";
-import { Roll, Room, User, Validator } from '../types';
+import { Roll, Room, User, Validator } from "../types";
 
 const ajv = new Ajv();
 
@@ -9,7 +9,7 @@ export function isValidArrayOf<T>(isValidValue: Validator<T>): Validator<T[]> {
       return false;
     }
 
-    return data.every(value => isValidValue(value));
+    return data.every((value) => isValidValue(value));
   };
 }
 

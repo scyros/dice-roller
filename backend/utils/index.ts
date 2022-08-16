@@ -1,5 +1,5 @@
 import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
-import {OperationError, OperationResult, OperationSuccess, Validator} from '../types';
+import { OperationError, OperationResult, OperationSuccess, Validator } from "../types";
 
 /**
  * Converts string body to json body
@@ -18,7 +18,7 @@ export function parseBody(event: APIGatewayProxyWebsocketEventV2): object | null
   }
 
   if (!isPlainObject(parsedBody)) {
-    throw new Error('Invalid request body');
+    throw new Error("Invalid request body");
   }
 
   return parsedBody;
@@ -58,8 +58,8 @@ export function removeItemFromCollection<T>(collection: T[], item: T): T[] {
 }
 
 // https://stackoverflow.com/a/69745650/1581433
-function isPlainObject (value: unknown): value is object {
-  return typeof(value) === 'object' && value?.constructor === Object;
+function isPlainObject(value: unknown): value is object {
+  return typeof value === "object" && value?.constructor === Object;
 }
 
 export function isSuccess<T>(result: OperationResult<T>): result is OperationSuccess<T> {

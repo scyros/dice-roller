@@ -29,16 +29,9 @@ const OPERATIONS = {
   "-": (a: number, b: number) => a - b,
 };
 
-export function doRoll({
-  count,
-  faces,
-  operation: op,
-  modifier = 0,
-}: Roll): RollResult {
+export function doRoll({ count, faces, operation: op, modifier = 0 }: Roll): RollResult {
   const operation = op ? OPERATIONS[op] : null;
-  const diceResults = Array.from(new Array(count)).map(() =>
-    Math.ceil(Math.random() * faces)
-  );
+  const diceResults = Array.from(new Array(count)).map(() => Math.ceil(Math.random() * faces));
   const subtotal = diceResults.reduce((sum, result) => sum + result, 0);
   const total = operation ? operation(subtotal, modifier) : subtotal;
 

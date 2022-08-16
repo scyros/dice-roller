@@ -1,11 +1,11 @@
-import { APIGatewayProxyWebsocketEventV2, APIGatewayProxyWebsocketHandlerV2 } from 'aws-lambda';
-import { Handler, OperationError } from '../types';
-import { parseBody } from '../utils';
-import authorizeWithEvent from './authorize';
-import createRoomWithEvent from './createRoom';
-import joinRoomWithEvent from './joinRoom';
-import rollWithEvent from './roll';
-import { Error } from '../errors';
+import { APIGatewayProxyWebsocketEventV2, APIGatewayProxyWebsocketHandlerV2 } from "aws-lambda";
+import { Handler, OperationError } from "../types";
+import { parseBody } from "../utils";
+import authorizeWithEvent from "./authorize";
+import createRoomWithEvent from "./createRoom";
+import joinRoomWithEvent from "./joinRoom";
+import rollWithEvent from "./roll";
+import { Error } from "../errors";
 
 function transformBody<T>(fn: Handler<T>): APIGatewayProxyWebsocketHandlerV2<T | OperationError> {
   return (event: APIGatewayProxyWebsocketEventV2): Promise<T | OperationError> => {
@@ -16,7 +16,7 @@ function transformBody<T>(fn: Handler<T>): APIGatewayProxyWebsocketHandlerV2<T |
     } catch (e) {
       return Promise.resolve({
         success: false,
-        errors: [Error.InvalidBody]
+        errors: [Error.InvalidBody],
       });
     }
 

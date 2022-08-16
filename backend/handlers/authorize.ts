@@ -1,4 +1,4 @@
-import { APIGatewayRequestAuthorizerEventV2, APIGatewayRequestSimpleAuthorizerHandlerV2 } from 'aws-lambda';
+import { APIGatewayRequestAuthorizerEventV2, APIGatewayRequestSimpleAuthorizerHandlerV2 } from "aws-lambda";
 
 const getIsAuthorized = async (_: APIGatewayRequestAuthorizerEventV2) => Promise.resolve(true);
 

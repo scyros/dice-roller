@@ -2,7 +2,7 @@ import { joinRoom } from "../db";
 import { isValidRoom, isValidUser } from "../db/schemas";
 import { Error } from "../errors";
 import { sendMessage, sendMessageAndKickoutUnreachables } from "../messaging";
-import { Action, AWSEvent, Handler, Room, User } from '../types';
+import { Action, AWSEvent, Handler, Room, User } from "../types";
 import { extractFromBody, isSuccess } from "../utils";
 
 const handler: Handler<void> = async (event: AWSEvent) => {

@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { Error } from "../errors";
 
 import { OperationResult, Room, User } from "../types";
-import { isSuccess } from '../utils';
+import { isSuccess } from "../utils";
 
 const ddb = new DynamoDBClient({ region: process.env.AWS_REGION });
 const dbbDoc = DynamoDBDocumentClient.from(ddb);

@@ -1,5 +1,5 @@
 import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
-import {Error} from './errors';
+import { Error } from "./errors";
 
 export interface AWSEvent extends Omit<APIGatewayProxyWebsocketEventV2, "body"> {
   body: object | null;

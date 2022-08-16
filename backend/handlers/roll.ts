@@ -1,10 +1,10 @@
 import { getRoom } from "../db";
-import { doRoll } from '../dice';
+import { doRoll } from "../dice";
 import { sendMessage, sendMessageAndKickoutUnreachables } from "../messaging";
 import { extractFromBody, isSuccess } from "../utils";
-import { Action, AWSEvent, Handler, Roll, Room, User } from '../types';
+import { Action, AWSEvent, Handler, Roll, Room, User } from "../types";
 import { Error } from "../errors";
-import { isValidArrayOf, isValidRoll, isValidRoom, isValidUser } from '../db/schemas';
+import { isValidArrayOf, isValidRoll, isValidRoom, isValidUser } from "../db/schemas";
 
 const handler: Handler<void> = async (event: AWSEvent) => {
   const {
