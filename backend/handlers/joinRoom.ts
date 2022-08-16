@@ -15,13 +15,20 @@ const handler: Handler<void> = async (event: AWSEvent) => {
   const room = extractFromBody<Room>(body, "room", isValidRoom);
 
   if (!user || !room) {
+    const errors: Error[] = [];
+
+    const addNeededError = (value: unknown, error: Error) => !value && errors.push(error);
+
+    addNeededError(user, Error.InvalidUser);
+    addNeededError(room, Error.InvalidRoom);
+
     await sendMessage({
       event,
       connectionIds: [connectionId],
       data: {
         action: Action.JoinRoom,
         success: false,
-        errors: [Error.InvalidUser, Error.InvalidRoom],
+        errors: errors,
       },
     });
     return;

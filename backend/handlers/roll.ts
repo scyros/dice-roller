@@ -16,13 +16,21 @@ const handler: Handler<void> = async (event: AWSEvent) => {
   const room = extractFromBody<Room>(body, "room", isValidRoom);
   const rolls = extractFromBody<Roll[]>(body, "rolls", isValidArrayOf(isValidRoll));
   if (!user || !room || !rolls) {
+    const errors: Error[] = [];
+
+    const addNeededError = (value: unknown, error: Error) => !value && errors.push(error);
+
+    addNeededError(user, Error.InvalidUser);
+    addNeededError(room, Error.InvalidRoom);
+    addNeededError(rolls, Error.InvalidRoll);
+
     await sendMessage({
       event,
       connectionIds: [connectionId],
       data: {
         action: Action.Roll,
         success: false,
-        errors: [Error.InvalidUser, Error.InvalidRoom, Error.InvalidRoll],
+        errors,
       },
     });
     return;
