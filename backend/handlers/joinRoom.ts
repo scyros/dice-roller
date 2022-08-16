@@ -2,7 +2,7 @@ import { joinRoom } from "../db";
 import { isValidRoom, isValidUser } from "../db/schemas";
 import { Errors } from "../errors";
 import { sendMessage, sendMessageAndKickoutUnreachables } from "../messaging";
-import { Actions, AWSEvent, Room, User } from "../types";
+import { Action, AWSEvent, Room, User } from "../types";
 import { extractFromBody, isSuccess } from "../utils";
 
 export const handler = async (event: AWSEvent) => {
@@ -18,7 +18,7 @@ export const handler = async (event: AWSEvent) => {
       event,
       connectionIds: [connectionId],
       data: {
-        action: Actions.JoinRoom,
+        action: Action.JoinRoom,
         success: false,
         errors: [Errors.InvalidUser, Errors.InvalidRoom],
       },
@@ -33,7 +33,7 @@ export const handler = async (event: AWSEvent) => {
       event,
       connectionIds: [connectionId],
       data: {
-        action: Actions.JoinRoom,
+        action: Action.JoinRoom,
         success: false,
         errors: [Errors.JoinRoomError],
       },
@@ -49,7 +49,7 @@ export const handler = async (event: AWSEvent) => {
     roomId,
     connectionIds: (users ?? []).map(({ connectionId }) => connectionId),
     message: { roomId, joiner: { connectionId, ...user }, users: users ?? [] },
-    action: Actions.JoinRoom,
+    action: Action.JoinRoom,
     success: true,
   });
 };

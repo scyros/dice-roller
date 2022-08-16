@@ -2,7 +2,7 @@ import { createRoom } from "../db";
 import { isValidUser } from "../db/schemas";
 import { Errors } from "../errors";
 import { sendMessage } from "../messaging";
-import { Actions, AWSEvent, User } from "../types";
+import { Action, AWSEvent, User } from "../types";
 import { extractFromBody, isSuccess } from "../utils";
 
 const handler = async (event: AWSEvent) => {
@@ -17,7 +17,7 @@ const handler = async (event: AWSEvent) => {
       event,
       connectionIds: [connectionId],
       data: {
-        action: Actions.CreateRoom,
+        action: Action.CreateRoom,
         success: false,
         errors: [Errors.InvalidUser],
       },
@@ -32,7 +32,7 @@ const handler = async (event: AWSEvent) => {
       event,
       connectionIds: [connectionId],
       data: {
-        action: Actions.CreateRoom,
+        action: Action.CreateRoom,
         success: false,
         errors: [Errors.CreateRoomError],
       },
@@ -45,7 +45,7 @@ const handler = async (event: AWSEvent) => {
     event,
     connectionIds: [connectionId],
     data: {
-      action: Actions.CreateRoom,
+      action: Action.CreateRoom,
       success: true,
       result: room,
     },

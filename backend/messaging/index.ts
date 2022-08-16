@@ -1,7 +1,7 @@
 import { ApiGatewayManagementApiClient, PostToConnectionCommand } from "@aws-sdk/client-apigatewaymanagementapi";
 
 import { leaveRoom as leaveRoomDB } from "../db";
-import { Actions, AWSEvent, OperationResult, UnreachableUsers } from "../types";
+import { Action, AWSEvent, OperationResult, UnreachableUsers } from "../types";
 import { isSuccess } from "../utils";
 
 async function sendMsg(
@@ -81,7 +81,7 @@ async function leaveRoom({
     event,
     connectionIds,
     data: {
-      action: Actions.LeaveRoom,
+      action: Action.LeaveRoom,
       success: true,
       result: room,
     },
@@ -113,7 +113,7 @@ export async function sendMessageAndKickoutUnreachables<T>({
 }: UnreachableUsers & {
   message: T;
   success: boolean;
-  action: Actions;
+  action: Action;
 }): Promise<void> {
   const connIdsToRemove = await sendMessage<T>({
     event,

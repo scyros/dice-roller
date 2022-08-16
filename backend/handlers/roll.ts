@@ -2,7 +2,7 @@ import { getRoom } from "../db";
 import { doRoll } from "../dice";
 import { sendMessage, sendMessageAndKickoutUnreachables } from "../messaging";
 import { extractFromBody, isSuccess } from "../utils";
-import { Actions, AWSEvent, Roll, Room, User } from "../types";
+import { Action, AWSEvent, Roll, Room, User } from "../types";
 import { Errors } from "../errors";
 
 export const handler = async (event: AWSEvent) => {
@@ -19,7 +19,7 @@ export const handler = async (event: AWSEvent) => {
       event,
       connectionIds: [connectionId],
       data: {
-        action: Actions.Roll,
+        action: Action.Roll,
         success: false,
         errors: [Errors.InvalidUser, Errors.InvalidRoom, Errors.InvalidRoll],
       },
@@ -33,7 +33,7 @@ export const handler = async (event: AWSEvent) => {
       event,
       connectionIds: [connectionId],
       data: {
-        action: Actions.Roll,
+        action: Action.Roll,
         success: false,
         errors: [Errors.NoRoom],
       },
@@ -50,7 +50,7 @@ export const handler = async (event: AWSEvent) => {
     roomId: roomId,
     connectionIds: (users ?? []).map(({ connectionId }) => connectionId),
     message: { roller: { connectionId, ...user }, ...rollResults },
-    action: Actions.Roll,
+    action: Action.Roll,
     success: true,
   });
 };

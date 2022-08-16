@@ -5,7 +5,7 @@ export interface AWSEvent extends Omit<APIGatewayProxyWebsocketEventV2, "body"> 
 }
 
 export interface OperationResult<T> {
-  action?: Actions;
+  action?: Action;
   errors?: string[];
   result?: T;
   success: boolean;
@@ -22,7 +22,7 @@ export interface UnreachableUsers {
   connectionIds: string[];
 }
 
-export enum Actions {
+export enum Action {
   CreateRoom = "CREATE_ROOM",
   JoinRoom = "JOIN_ROOM",
   Roll = "ROLL",
