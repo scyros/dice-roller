@@ -1,17 +1,30 @@
-import { APIGatewayProxyWebsocketEventV2 } from "aws-lambda";
-import { AWSEvent } from "../types";
+import { APIGatewayProxyWebsocketEventV2, APIGatewayProxyWebsocketHandlerV2 } from "aws-lambda";
+import { Handler, OperationError } from "../types";
 import { parseBody } from "../utils";
-export { default as authorize } from "./authorize";
-import { default as createRoomWithEvent } from "./createRoom";
-import { default as joinRoomWithEvent } from "./joinRoom";
-import { default as rollWithEvent } from "./roll";
+import authorizeWithEvent from "./authorize";
+import createRoomWithEvent from "./createRoom";
+import joinRoomWithEvent from "./joinRoom";
+import rollWithEvent from "./roll";
+import { Error } from "../errors";
 
-export function transformBody(fn: (event: AWSEvent) => Promise<void>) {
-  return function (event: APIGatewayProxyWebsocketEventV2) {
-    const body = parseBody(event);
+function transformBody<T>(fn: Handler<T>): APIGatewayProxyWebsocketHandlerV2<T | OperationError> {
+  return (event: APIGatewayProxyWebsocketEventV2): Promise<T | OperationError> => {
+    let body: object | null;
+
+    try {
+      body = parseBody(event);
+    } catch (e) {
+      return Promise.resolve({
+        success: false,
+        errors: [Error.InvalidBody],
+      });
+    }
+
     return fn({ ...event, body });
   };
 }
+
+export const authorize = authorizeWithEvent;
 
 export const createRoom = transformBody(createRoomWithEvent);
 export const joinRoom = transformBody(joinRoomWithEvent);

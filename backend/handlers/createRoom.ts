@@ -1,25 +1,25 @@
 import { createRoom } from "../db";
 import { isValidUser } from "../db/schemas";
-import { Errors } from "../errors";
+import { Error } from "../errors";
 import { sendMessage } from "../messaging";
-import { Action, AWSEvent, User } from "../types";
+import { Action, AWSEvent, Handler, User } from "../types";
 import { extractFromBody, isSuccess } from "../utils";
 
-const handler = async (event: AWSEvent) => {
+const handler: Handler<void> = async (event: AWSEvent) => {
   const {
     body,
     requestContext: { connectionId },
   } = event;
 
-  const user = extractFromBody<User>(body, "user");
-  if (!isValidUser(user)) {
+  const user = extractFromBody<User>(body, "user", isValidUser);
+  if (!user) {
     await sendMessage({
       event,
       connectionIds: [connectionId],
       data: {
         action: Action.CreateRoom,
         success: false,
-        errors: [Errors.InvalidUser],
+        errors: [Error.InvalidUser],
       },
     });
     return;
@@ -27,14 +27,14 @@ const handler = async (event: AWSEvent) => {
 
   const result = await createRoom({ connectionId, ...user });
   if (!isSuccess(result)) {
-    result.errors?.map(console.error);
+    result.errors.map(console.error);
     await sendMessage({
       event,
       connectionIds: [connectionId],
       data: {
         action: Action.CreateRoom,
         success: false,
-        errors: [Errors.CreateRoomError],
+        errors: [Error.CreateRoomError],
       },
     });
     return;

@@ -1,26 +1,34 @@
 import { joinRoom } from "../db";
 import { isValidRoom, isValidUser } from "../db/schemas";
-import { Errors } from "../errors";
+import { Error } from "../errors";
 import { sendMessage, sendMessageAndKickoutUnreachables } from "../messaging";
-import { Action, AWSEvent, Room, User } from "../types";
+import { Action, AWSEvent, Handler, Room, User } from "../types";
 import { extractFromBody, isSuccess } from "../utils";
 
-export const handler = async (event: AWSEvent) => {
+const handler: Handler<void> = async (event: AWSEvent) => {
   const {
     body,
     requestContext: { connectionId },
   } = event;
 
-  const user = extractFromBody<User>(body, "user");
-  const room = extractFromBody<Room>(body, "room");
-  if (!isValidUser(user) || !isValidRoom(room)) {
+  const user = extractFromBody<User>(body, "user", isValidUser);
+  const room = extractFromBody<Room>(body, "room", isValidRoom);
+
+  if (!user || !room) {
+    const errors: Error[] = [];
+
+    const addNeededError = (value: unknown, error: Error) => !value && errors.push(error);
+
+    addNeededError(user, Error.InvalidUser);
+    addNeededError(room, Error.InvalidRoom);
+
     await sendMessage({
       event,
       connectionIds: [connectionId],
       data: {
         action: Action.JoinRoom,
         success: false,
-        errors: [Errors.InvalidUser, Errors.InvalidRoom],
+        errors: errors,
       },
     });
     return;
@@ -28,14 +36,14 @@ export const handler = async (event: AWSEvent) => {
 
   const result = await joinRoom(room.id, { connectionId, ...user });
   if (!isSuccess(result)) {
-    result.errors?.map(console.error);
+    result.errors.map(console.error);
     await sendMessage({
       event,
       connectionIds: [connectionId],
       data: {
         action: Action.JoinRoom,
         success: false,
-        errors: [Errors.JoinRoomError],
+        errors: [Error.JoinRoomError],
       },
     });
     return;

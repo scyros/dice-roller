@@ -10,7 +10,7 @@ module.exports = {
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "plugin:@typescript-eslint/strict",
-    "prettier",
+    "plugin:prettier/recommended",
   ],
   parser: "@typescript-eslint/parser",
   parserOptions: {
@@ -18,9 +18,13 @@ module.exports = {
     sourceType: "module",
     project: ["tsconfig.eslint.json"],
   },
-  plugins: ["@typescript-eslint"],
+  plugins: [
+    "@typescript-eslint",
+    "prettier"
+  ],
   rules: {
     "no-unused-vars": "off",
+    "prettier/prettier": "error",
 
     "@typescript-eslint/no-base-to-string": "off",
     "@typescript-eslint/restrict-template-expressions": "off",
