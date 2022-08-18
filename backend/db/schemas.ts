@@ -31,6 +31,7 @@ const roomSchema = {
   type: "object",
   properties: {
     id: { type: "string" },
+    users: { type: "array", items: { type: "string" } },
   },
   required: ["id"],
   additionalProperties: false,

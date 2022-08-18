@@ -6,7 +6,6 @@
 import { Config } from "@jest/types";
 
 const config: Config.InitialOptions = {
-  testEnvironment: "node",
   collectCoverage: true,
   collectCoverageFrom: ["**/*.ts", "!jest.config.ts"],
   coverageDirectory: "coverage",
@@ -18,6 +17,8 @@ const config: Config.InitialOptions = {
       statements: 100,
     },
   },
+  setupFiles: ["<rootDir>/.jest/setEnvVars.ts"],
+  testEnvironment: "node",
 };
 
 export default config;

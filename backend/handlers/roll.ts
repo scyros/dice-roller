@@ -57,7 +57,7 @@ const handler: Handler<void> = async (event: AWSEvent) => {
   await sendMessageAndKickoutUnreachables({
     event,
     roomId: roomId,
-    connectionIds: (users ?? []).map(({ connectionId }) => connectionId),
+    connectionIds: users.map(({ connectionId }) => connectionId),
     message: { roller: { connectionId, ...user }, ...rollResults },
     action: Action.Roll,
     success: true,

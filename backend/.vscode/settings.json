@@ -1,3 +1,5 @@
 {
-  "jest.jestCommandLine": "node_modules/.bin/jest --runInBand"
+  "jest.jestCommandLine": "npm run test",
+  "jest.showCoverageOnLoad": true,
+  "eslint.debug": true
 }

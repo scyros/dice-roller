@@ -18,10 +18,7 @@ module.exports = {
     sourceType: "module",
     project: ["tsconfig.eslint.json"],
   },
-  plugins: [
-    "@typescript-eslint",
-    "prettier"
-  ],
+  plugins: ["@typescript-eslint", "prettier"],
   rules: {
     "no-unused-vars": "off",
     "prettier/prettier": "error",

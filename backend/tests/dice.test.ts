@@ -16,17 +16,38 @@ describe("dice", () => {
   });
 
   it("should throw an error when roll is invalid", () => {
-    const t = () => buildRoll("hello world!");
-    expect(t).toThrow("invalid roll");
+    const t1 = () => buildRoll("hello world!");
+    expect(t1).toThrow("invalid roll");
+    const t2 = () => buildRoll(1 as unknown as string);
+    expect(t2).toThrow("invalid roll");
   });
 
   it("should do roll", () => {
-    const roll = buildRoll("2d10+2");
-    const result = doRoll(roll);
-    expect(result).toHaveProperty("diceResults");
-    expect(result).toHaveProperty("modifier", 2);
-    expect(result).toHaveProperty("total");
-    expect(result.diceResults).toBeInstanceOf(Array);
-    expect(result.total).toBeGreaterThanOrEqual(4);
+    const roll1 = buildRoll("2d10-2");
+    const result1 = doRoll(roll1);
+    expect(result1).toHaveProperty("diceResults");
+    expect(result1).toHaveProperty("modifier", 2);
+    expect(result1).toHaveProperty("total");
+    expect(result1.diceResults).toBeInstanceOf(Array);
+    expect(result1.total).toBeGreaterThanOrEqual(0);
+    expect(result1.total).toBeLessThanOrEqual(18);
+
+    const roll2 = buildRoll("3d6+2");
+    const result2 = doRoll(roll2);
+    expect(result2).toHaveProperty("diceResults");
+    expect(result2).toHaveProperty("modifier", 2);
+    expect(result2).toHaveProperty("total");
+    expect(result2.diceResults).toBeInstanceOf(Array);
+    expect(result2.total).toBeGreaterThanOrEqual(5);
+    expect(result2.total).toBeLessThanOrEqual(20);
+
+    const roll3 = buildRoll("4d4");
+    const result3 = doRoll(roll3);
+    expect(result3).toHaveProperty("diceResults");
+    expect(result3).toHaveProperty("modifier", 0);
+    expect(result3).toHaveProperty("total");
+    expect(result3.diceResults).toBeInstanceOf(Array);
+    expect(result3.total).toBeGreaterThanOrEqual(4);
+    expect(result3.total).toBeLessThanOrEqual(16);
   });
 });

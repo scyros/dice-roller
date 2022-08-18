@@ -3,14 +3,14 @@ import { Roll, RollResult } from "../types";
 const DICE_ROLL_REGEX =
   /^(?<count>\d+)d(?<faces>[2|3|4|6|8|10|12|20|100]+)(((?<operation>[+|-]){1})(?<modifier>\d)+)?$/i;
 
-export function isValidRawRoll(roll: unknown): boolean {
+export function isValidRollDefinition(roll: unknown): boolean {
   if (typeof roll !== "string") return false;
 
   return DICE_ROLL_REGEX.test(roll);
 }
 
 export function buildRoll(roll: string): Roll {
-  if (!isValidRawRoll(roll)) throw new Error("invalid roll");
+  if (!isValidRollDefinition(roll)) throw new Error("invalid roll");
   const { count, faces, operation, modifier } =
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     DICE_ROLL_REGEX.exec(roll)!.groups!;

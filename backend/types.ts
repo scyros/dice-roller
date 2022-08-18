@@ -36,9 +36,13 @@ export interface User {
   nickName: string;
 }
 
+export interface UserWithConnectionId extends User {
+  connectionId: string;
+}
+
 export interface Room {
   id: string;
-  users?: (User & { connectionId: string })[];
+  users: UserWithConnectionId[];
 }
 
 export interface Roll {

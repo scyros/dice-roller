@@ -3,25 +3,26 @@ import { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand } from "@
 import { v4 as uuidv4 } from "uuid";
 import { Error } from "../errors";
 
-import { OperationResult, Room, User } from "../types";
+import { OperationResult, Room, User, UserWithConnectionId } from "../types";
 import { isSuccess } from "../utils";
 
-const ddb = new DynamoDBClient({ region: process.env.AWS_REGION });
-const dbbDoc = DynamoDBDocumentClient.from(ddb);
+const ddbDoc: DynamoDBDocumentClient = DynamoDBDocumentClient.from(
+  new DynamoDBClient({ region: process.env.AWS_REGION })
+);
 
 /**
  * Create a room
  * @param user User that creates the room
  * @returns The room created
  */
-export async function createRoom(user: User & { connectionId: string }): Promise<OperationResult<Room>> {
+export async function createRoom(user: UserWithConnectionId): Promise<OperationResult<Room>> {
   const room: Room = {
     id: uuidv4(),
     users: [user],
   };
 
   try {
-    await dbbDoc.send(
+    await ddbDoc.send(
       new PutCommand({
         TableName: process.env.MATCHES_TABLE,
         Item: room,
@@ -47,7 +48,7 @@ export async function createRoom(user: User & { connectionId: string }): Promise
  */
 export async function joinRoom(roomId: string, user: User & { connectionId: string }): Promise<OperationResult<Room>> {
   try {
-    const { Attributes: room } = await ddb.send(
+    const { Attributes: room } = await ddbDoc.send(
       new UpdateCommand({
         TableName: process.env.MATCHES_TABLE,
         Key: { id: roomId },
@@ -71,16 +72,18 @@ export async function joinRoom(roomId: string, user: User & { connectionId: stri
  */
 export async function getRoom(roomId: string): Promise<OperationResult<Room>> {
   try {
-    const { Item: room } = await ddb.send(
+    const result = await ddbDoc.send(
       new GetCommand({
         TableName: process.env.MATCHES_TABLE,
         Key: { id: roomId },
       })
     );
+    if (result.Item) return { success: true, result: result.Item as Room };
 
-    return { success: true, result: room as Room };
-  } catch (e) {
     return { success: false, errors: [Error.NoRoom] };
+  } catch (e) {
+    console.error(e);
+    return { success: false, errors: [Error.GetRoomError] };
   }
 }
 
@@ -90,7 +93,7 @@ export async function getRoom(roomId: string): Promise<OperationResult<Room>> {
  * @param connectionIds Users that are leaving the room
  * @returns Indexes of the leaving users
  */
-export function findPositionsForConnectionIds(users: { connectionId: string }[] = [], connectionIds: string[] = []) {
+export function findPositionsForConnectionIds(users: { connectionId: string }[], connectionIds: string[]) {
   return users
     .reduce<number[]>(
       (acc, { connectionId }, idx) => [...acc, connectionIds.some((cId) => connectionId === cId) ? idx : -1],
@@ -119,7 +122,7 @@ export async function leaveRoom(roomId: string, connectionIds: string[]): Promis
   if (!idxs.length) return { success: true, result: result.result };
 
   try {
-    const { Attributes: room } = await ddb.send(
+    const { Attributes: room } = await ddbDoc.send(
       new UpdateCommand({
         TableName: process.env.MATCHES_TABLE,
         Key: { id: roomId },
